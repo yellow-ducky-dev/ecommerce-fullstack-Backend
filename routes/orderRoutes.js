@@ -58,4 +58,35 @@ router.get('/', protect, admin, async (req, res) => {
   }
 });
 
+router.put('/:id/cancel', protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order)
+      return res.status(404).json({ message: 'Order not found' });
+
+    // Ensure user owns the order
+    if (order.user.toString() !== req.user._id.toString())
+      return res.status(403).json({ message: 'Not authorized' });
+
+    // Only pending orders can be cancelled
+    if (order.status !== 'pending')
+      return res.status(400).json({
+        message: 'Only pending orders can be cancelled'
+      });
+
+    order.status = 'cancelled';
+    order.cancelledAt = Date.now();
+
+    await order.save();
+
+    res.json({
+      message: 'Order cancelled successfully',
+      order
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
