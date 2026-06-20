@@ -89,4 +89,19 @@ router.put('/:id/cancel', protect, async (req, res) => {
   }
 });
 
+// Update order status (Admin)
+router.put('/:id/status', protect, admin, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    order.status = req.body.status;
+    if (req.body.status === 'delivered') { order.isDelivered = true; order.deliveredAt = Date.now(); }
+    if (req.body.status === 'cancelled') order.cancelledAt = Date.now();
+    const updated = await order.save();
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

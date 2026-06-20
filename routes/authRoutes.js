@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-const { protect } = require("../middleware/auth");
+const { protect, admin } = require('../middleware/auth');
 
 /* ── helpers ── */
 const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -117,5 +117,24 @@ router.put("/profile", protect, async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 });
+
+
+router.get('/users', protect, admin, async (req, res) => {
+  try {
+    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.delete('/users/:id', protect, admin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.isAdmin) return res.status(400).json({ message: 'Cannot delete admin user' });
+    await user.deleteOne();
+    res.json({ message: 'User removed' });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 
 module.exports = router;

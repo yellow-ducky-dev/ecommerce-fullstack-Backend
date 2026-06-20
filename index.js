@@ -1,18 +1,18 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-const express  = require("express");
+const express = require("express");
 const mongoose = require("mongoose");
-const cors     = require("cors");
-const helmet   = require("helmet");
-const morgan   = require("morgan");
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
 require("dotenv").config();
 
-const productRoutes    = require("./routes/productRoutes");
-const authRoutes       = require("./routes/authRoutes");
-const orderRoutes      = require("./routes/orderRoutes");
+const productRoutes = require("./routes/productRoutes");
+const authRoutes = require("./routes/authRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 const collectionRoutes = require("./routes/collectionRoutes");
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ✅ Always allow all common Vite ports + optional CLIENT_URL from .env
@@ -24,22 +24,27 @@ const allowedOrigins = [
   ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : []),
 ];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS blocked: ${origin}`));
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true,
+  }),
+);
 
 app.use(helmet());
 app.use(morgan("dev"));
-app.use(express.json());
+
+// Json limit
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Routes
-app.use("/api/products",    productRoutes);
-app.use("/api/auth",        authRoutes);
-app.use("/api/orders",      orderRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/orders", orderRoutes);
 app.use("/api/collections", collectionRoutes);
 
 // Health check
